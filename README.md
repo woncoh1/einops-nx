@@ -1,4 +1,4 @@
-# Einops for Nx - first-release draft
+# Einops for Nx
 
 Four operations, ordinary Nx tensors, one shared transformation pipeline.
 This is an unpublished implementation draft, not an existing Hex release.
