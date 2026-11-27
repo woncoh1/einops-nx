@@ -175,7 +175,14 @@ defmodule EinopsTest do
 
     test "preserves vectorized axes" do
       x = Nx.iota({2, 3}) |> Nx.vectorize(:ensemble)
-      assert_tensor(Einops.repeat(x, "n -> n r", r: 2), Nx.broadcast(x, {3, 2}, axes: [0]))
+      expected =
+        Nx.tensor([
+          [[0, 0], [1, 1], [2, 2]],
+          [[3, 3], [4, 4], [5, 5]]
+        ])
+        |> Nx.vectorize(:ensemble)
+
+      assert_tensor(Einops.repeat(x, "n -> n r", r: 2), expected)
     end
 
     test "retains ellipsis and supports singleton insertion" do
