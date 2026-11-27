@@ -122,7 +122,23 @@ defmodule Einops do
 
     tensor =
       if context.operation == :repeat do
-        Nx.broadcast(tensor, plan.broadcast_shape, axes: plan.broadcast_axes)
+        # Align the existing axes with their output positions before broadcasting.
+        # Nx 1.0's explicit-axis broadcast can fail on vectorized tensors.
+        sizes =
+          plan.broadcast_axes
+          |> Enum.zip(Tuple.to_list(Nx.shape(tensor)))
+          |> Map.new()
+
+        aligned_shape =
+          plan.broadcast_shape
+          |> Tuple.to_list()
+          |> Enum.with_index()
+          |> Enum.map(fn {_, axis} -> Map.get(sizes, axis, 1) end)
+          |> List.to_tuple()
+
+        tensor
+        |> Nx.reshape(aligned_shape)
+        |> Nx.broadcast(plan.broadcast_shape)
       else
         tensor
       end
