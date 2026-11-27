@@ -22,7 +22,7 @@ passes them.
 mix deps.get
 mix format
 mix compile --warnings-as-errors
-mix test --trace
+mix test --warnings-as-errors --trace
 mix test --cover
 ```
 
@@ -40,7 +40,9 @@ validation should be done separately before advertising support.
 | `reference_test.exs` | 67 generated comparisons against expected values from Python einops |
 
 Reference fixtures are committed as Elixir literals. Running the Elixir tests
-does not require Python. To regenerate them during development:
+does not require Python. The fixture is loaded by `reference_test.exs` and
+excluded from Mix test-file discovery with `:test_ignore_filters`.
+To regenerate the fixtures during development:
 
 ```sh
 python -m pip install numpy einops
