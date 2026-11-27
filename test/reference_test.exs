@@ -11,16 +11,20 @@ defmodule Einops.ReferenceTest do
       example = @example
       x = example.input |> Nx.tensor(type: :f32) |> Nx.reshape(example.shape)
 
-      result =
-        case example.operation do
-          :rearrange -> Einops.rearrange(x, example.pattern, example.axes)
-          :repeat -> Einops.repeat(x, example.pattern, example.axes)
-          :reduce -> Einops.reduce(x, example.pattern, example.reduction, example.axes)
-        end
+      result = run_example(x, example)
 
       expected = example.expected |> Nx.tensor(type: :f32) |> Nx.reshape(example.expected_shape)
       assert Nx.shape(result) == example.expected_shape
       assert Nx.to_number(Nx.all_close(result, expected, atol: 1.0e-5, rtol: 1.0e-5)) == 1
     end
   end
+
+  defp run_example(x, %{operation: :rearrange} = example),
+    do: Einops.rearrange(x, example.pattern, example.axes)
+
+  defp run_example(x, %{operation: :repeat} = example),
+    do: Einops.repeat(x, example.pattern, example.axes)
+
+  defp run_example(x, %{operation: :reduce} = example),
+    do: Einops.reduce(x, example.pattern, example.reduction, example.axes)
 end
