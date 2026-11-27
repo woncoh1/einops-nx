@@ -128,7 +128,11 @@ defmodule Einops.DefnTest do
 
   test "vectorized axes survive a defn call" do
     x = Nx.iota({2, 3, 4}, type: :f32) |> Nx.vectorize(:ensemble)
-    expected = x |> Nx.transpose() |> Nx.broadcast({4, 3, 3}, axes: [0, 2])
+    expected =
+      x
+      |> Nx.transpose()
+      |> Nx.reshape({4, 1, 3})
+      |> Nx.broadcast({4, 3, 3})
     assert_tensor(F.repeated(x), expected)
   end
 
