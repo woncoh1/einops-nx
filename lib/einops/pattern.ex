@@ -142,6 +142,16 @@ defmodule Einops.Pattern do
       Error.fail!(context, "output '...' requires '...' in the input pattern")
     end
 
+    # Keep this check before expansion: an ellipsis can represent zero axes,
+    # but rearrange and repeat must still retain it in the output pattern.
+    if input_ellipsis? and not output_ellipsis? and context.operation in [:rearrange, :repeat] do
+      Error.fail!(
+        context,
+        "#{context.operation} cannot remove input '...'; include it in the output " <>
+          "or use reduce to aggregate those axes"
+      )
+    end
+
     rank = tuple_size(context.shape)
     explicit = length(left) - if(input_ellipsis?, do: 1, else: 0)
 
