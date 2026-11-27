@@ -77,6 +77,7 @@ defmodule Einops.DefnTest do
 
   test "composed transformations under explicit jit" do
     x = Nx.iota({2, 3, 4}, type: :f32)
+
     expected =
       x
       |> Nx.reshape({2, 3, 2, 2})
@@ -89,7 +90,11 @@ defmodule Einops.DefnTest do
   end
 
   test "can compile ahead of time from a tensor template" do
-    compiled = Nx.Defn.compile(&F.split_heads/1, [Nx.template({2, 3, 4}, :f32)], compiler: Nx.Defn.Evaluator)
+    compiled =
+      Nx.Defn.compile(&F.split_heads/1, [Nx.template({2, 3, 4}, :f32)],
+        compiler: Nx.Defn.Evaluator
+      )
+
     x = Nx.iota({2, 3, 4}, type: :f32)
     assert_tensor(compiled.(x), F.split_heads(x))
   end
@@ -128,11 +133,13 @@ defmodule Einops.DefnTest do
 
   test "vectorized axes survive a defn call" do
     x = Nx.iota({2, 3, 4}, type: :f32) |> Nx.vectorize(:ensemble)
+
     expected =
       x
       |> Nx.transpose()
       |> Nx.reshape({4, 1, 3})
       |> Nx.broadcast({4, 3, 3})
+
     assert_tensor(F.repeated(x), expected)
   end
 

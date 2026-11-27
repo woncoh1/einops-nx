@@ -59,7 +59,10 @@ defmodule Einops.Plan do
     Enum.reduce(pairs, %{}, fn {name, size}, sizes ->
       cond do
         not Pattern.label?(name) ->
-          Error.fail!(context, "invalid axis-length key #{inspect(name)}; map keys must be label strings")
+          Error.fail!(
+            context,
+            "invalid axis-length key #{inspect(name)}; map keys must be label strings"
+          )
 
         Map.has_key?(sizes, name) ->
           Error.fail!(context, "axis length #{inspect(name)} was supplied more than once")
@@ -82,7 +85,8 @@ defmodule Einops.Plan do
     end)
   end
 
-  @spec infer!([Pattern.axis()], pos_integer(), non_neg_integer(), map(), Error.context()) :: map()
+  @spec infer!([Pattern.axis()], pos_integer(), non_neg_integer(), map(), Error.context()) ::
+          map()
   defp infer!(group, dimension, index, sizes, context) do
     unknown = Enum.reject(group, &Map.has_key?(sizes, &1))
     known_product = group |> Enum.reject(&(&1 in unknown)) |> product(sizes)

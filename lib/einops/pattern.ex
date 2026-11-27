@@ -83,10 +83,17 @@ defmodule Einops.Pattern do
     {inside, tail} = Enum.split_while(rest, &(&1 != ")"))
 
     cond do
-      "(" in inside -> Error.fail!(context, "nested axis groups are not supported")
-      tail == [] -> Error.fail!(context, "unclosed '(' in the pattern")
-      inside == [] -> Error.fail!(context, "empty groups are not supported; use '1' for a singleton")
-      true -> :ok
+      "(" in inside ->
+        Error.fail!(context, "nested axis groups are not supported")
+
+      tail == [] ->
+        Error.fail!(context, "unclosed '(' in the pattern")
+
+      inside == [] ->
+        Error.fail!(context, "empty groups are not supported; use '1' for a singleton")
+
+      true ->
+        :ok
     end
 
     [_closing | remaining] = tail
@@ -140,7 +147,11 @@ defmodule Einops.Pattern do
 
     if (input_ellipsis? and rank < explicit) or (not input_ellipsis? and rank != explicit) do
       expected = if input_ellipsis?, do: "at least #{explicit}", else: "#{explicit}"
-      Error.fail!(context, "rank mismatch: input pattern expects #{expected} dimensions, got #{rank}")
+
+      Error.fail!(
+        context,
+        "rank mismatch: input pattern expects #{expected} dimensions, got #{rank}"
+      )
     end
 
     ids =
@@ -153,12 +164,15 @@ defmodule Einops.Pattern do
   @spec expand_side(side(), [axis()]) :: side()
   defp expand_side(side, ids) do
     Enum.flat_map(side, fn
-      :ellipsis -> Enum.map(ids, &[&1])
+      :ellipsis ->
+        Enum.map(ids, &[&1])
+
       group ->
-        expanded = Enum.flat_map(group, fn
-          :ellipsis -> ids
-          label -> [label]
-        end)
+        expanded =
+          Enum.flat_map(group, fn
+            :ellipsis -> ids
+            label -> [label]
+          end)
 
         [expanded]
     end)

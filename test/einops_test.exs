@@ -27,12 +27,20 @@ defmodule EinopsTest do
 
     test "accepts a string-keyed length map" do
       x = Nx.iota({2, 12})
-      assert_tensor(Einops.rearrange(x, "b (h w) -> b h w", %{"h" => 3}), Nx.reshape(x, {2, 3, 4}))
+
+      assert_tensor(
+        Einops.rearrange(x, "b (h w) -> b h w", %{"h" => 3}),
+        Nx.reshape(x, {2, 3, 4})
+      )
     end
 
     test "validates all supplied dimensions, even when none need inference" do
       x = Nx.iota({2, 12})
-      assert_tensor(Einops.rearrange(x, "b (h w) -> b h w", b: 2, h: 3, w: 4), Nx.reshape(x, {2, 3, 4}))
+
+      assert_tensor(
+        Einops.rearrange(x, "b (h w) -> b h w", b: 2, h: 3, w: 4),
+        Nx.reshape(x, {2, 3, 4})
+      )
     end
 
     test "inserts and removes singleton dimensions" do
@@ -55,7 +63,11 @@ defmodule EinopsTest do
 
     test "moves a middle ellipsis" do
       x = Nx.iota({2, 3, 4, 5})
-      assert_tensor(Einops.rearrange(x, "b ... c -> c ... b"), Nx.transpose(x, axes: [3, 1, 2, 0]))
+
+      assert_tensor(
+        Einops.rearrange(x, "b ... c -> c ... b"),
+        Nx.transpose(x, axes: [3, 1, 2, 0])
+      )
     end
 
     test "composes output ellipsis dimensions" do
@@ -72,7 +84,10 @@ defmodule EinopsTest do
     test "patchification is invertible" do
       x = Nx.iota({2, 4, 6, 3})
       patches = Einops.rearrange(x, "b (h ph) (w pw) c -> b (h w) (ph pw c)", ph: 2, pw: 3)
-      restored = Einops.rearrange(patches, "b (h w) (ph pw c) -> b (h ph) (w pw) c", h: 2, ph: 2, pw: 3)
+
+      restored =
+        Einops.rearrange(patches, "b (h w) (ph pw c) -> b (h ph) (w pw) c", h: 2, ph: 2, pw: 3)
+
       assert Nx.shape(patches) == {2, 4, 18}
       assert_tensor(restored, x)
     end
@@ -97,12 +112,24 @@ defmodule EinopsTest do
   end
 
   describe "reduce" do
-    for {reduction, function} <- [sum: :sum, mean: :mean, min: :reduce_min, max: :reduce_max, prod: :product, any: :any, all: :all] do
+    for {reduction, function} <- [
+          sum: :sum,
+          mean: :mean,
+          min: :reduce_min,
+          max: :reduce_max,
+          prod: :product,
+          any: :any,
+          all: :all
+        ] do
       @reduction reduction
       @function function
       test "#{reduction} agrees with its Nx operation" do
         x = Nx.tensor([[0.0, 2.0, 3.0], [-1.0, 4.0, 5.0]])
-        assert_tensor(Einops.reduce(x, "b h -> b", @reduction), apply(Nx, @function, [x, [axes: [1]]]))
+
+        assert_tensor(
+          Einops.reduce(x, "b h -> b", @reduction),
+          apply(Nx, @function, [x, [axes: [1]]])
+        )
       end
     end
 
@@ -115,7 +142,11 @@ defmodule EinopsTest do
     test "performs local mean pooling" do
       x = Nx.iota({2, 6, 8, 3}, type: :f32)
       expected = x |> Nx.reshape({2, 3, 2, 4, 2, 3}) |> Nx.mean(axes: [2, 4])
-      assert_tensor(Einops.reduce(x, "b (h ph) (w pw) c -> b h w c", :mean, ph: 2, pw: 2), expected)
+
+      assert_tensor(
+        Einops.reduce(x, "b (h ph) (w pw) c -> b h w c", :mean, ph: 2, pw: 2),
+        expected
+      )
     end
 
     test "can reduce every dimension" do
@@ -130,7 +161,11 @@ defmodule EinopsTest do
 
     test "can insert singleton axes in its output" do
       x = Nx.iota({2, 3, 4}, type: :f32)
-      assert_tensor(Einops.reduce(x, "b h c -> b 1 1", :mean), Nx.mean(x, axes: [1, 2], keep_axes: true))
+
+      assert_tensor(
+        Einops.reduce(x, "b h c -> b 1 1", :mean),
+        Nx.mean(x, axes: [1, 2], keep_axes: true)
+      )
     end
 
     test "does not apply the reducer when no elementary axes disappear" do
@@ -164,7 +199,10 @@ defmodule EinopsTest do
 
     test "can split input dimensions before repeating" do
       x = Nx.iota({6})
-      expected = x |> Nx.reshape({2, 3}) |> Nx.broadcast({2, 4, 3}, axes: [0, 2]) |> Nx.reshape({8, 3})
+
+      expected =
+        x |> Nx.reshape({2, 3}) |> Nx.broadcast({2, 4, 3}, axes: [0, 2]) |> Nx.reshape({8, 3})
+
       assert_tensor(Einops.repeat(x, "(h w) -> (h copies) w", h: 2, copies: 4), expected)
     end
 
@@ -175,6 +213,7 @@ defmodule EinopsTest do
 
     test "preserves vectorized axes" do
       x = Nx.iota({2, 3}) |> Nx.vectorize(:ensemble)
+
       expected =
         Nx.tensor([
           [[0, 0], [1, 1], [2, 2]],
@@ -199,7 +238,11 @@ defmodule EinopsTest do
 
   describe "parse_shape" do
     test "extracts string-keyed dimension sizes" do
-      assert Einops.parse_shape(Nx.iota({2, 3, 4}), "batch height channels") == %{"batch" => 2, "height" => 3, "channels" => 4}
+      assert Einops.parse_shape(Nx.iota({2, 3, 4}), "batch height channels") == %{
+               "batch" => 2,
+               "height" => 3,
+               "channels" => 4
+             }
     end
 
     test "reads a template without inspecting tensor contents" do
@@ -211,8 +254,15 @@ defmodule EinopsTest do
     end
 
     test "skips zero or more ellipsis dimensions" do
-      assert Einops.parse_shape(Nx.iota({2, 3, 4, 5}), "batch ... channels") == %{"batch" => 2, "channels" => 5}
-      assert Einops.parse_shape(Nx.iota({2, 5}), "batch ... channels") == %{"batch" => 2, "channels" => 5}
+      assert Einops.parse_shape(Nx.iota({2, 3, 4, 5}), "batch ... channels") == %{
+               "batch" => 2,
+               "channels" => 5
+             }
+
+      assert Einops.parse_shape(Nx.iota({2, 5}), "batch ... channels") == %{
+               "batch" => 2,
+               "channels" => 5
+             }
     end
 
     test "handles scalars and wholly ignored shapes" do

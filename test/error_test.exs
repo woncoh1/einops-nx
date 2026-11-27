@@ -67,7 +67,11 @@ defmodule Einops.ErrorTest do
     @axes axes
     @message message
     test "rejects invalid axis lengths #{inspect(axes)}" do
-      error = assert_raise Einops.Error, fn -> Einops.rearrange(Nx.iota({2, 12}), "b (h w) -> b h w", @axes) end
+      error =
+        assert_raise Einops.Error, fn ->
+          Einops.rearrange(Nx.iota({2, 12}), "b (h w) -> b h w", @axes)
+        end
+
       assert error.reason =~ @message
     end
   end
@@ -103,9 +107,17 @@ defmodule Einops.ErrorTest do
   end
 
   test "requires a tensor and a pattern string" do
-    assert_raise Einops.Error, ~r/expected an Nx.Tensor/, fn -> Einops.rearrange([1, 2], "n -> n") end
-    assert_raise Einops.Error, ~r/pattern string/, fn -> Einops.rearrange(Nx.tensor([1]), :pattern) end
-    assert_raise Einops.Error, ~r/pattern string/, fn -> Einops.rearrange(Nx.tensor([1]), <<255>>) end
+    assert_raise Einops.Error, ~r/expected an Nx.Tensor/, fn ->
+      Einops.rearrange([1, 2], "n -> n")
+    end
+
+    assert_raise Einops.Error, ~r/pattern string/, fn ->
+      Einops.rearrange(Nx.tensor([1]), :pattern)
+    end
+
+    assert_raise Einops.Error, ~r/pattern string/, fn ->
+      Einops.rearrange(Nx.tensor([1]), <<255>>)
+    end
   end
 
   for pattern <- ["b b", "b", "b (c)", "b 1", "b -> c", "... ..."] do
