@@ -3,10 +3,11 @@
 Four operations, ordinary Nx tensors, one shared transformation pipeline.
 This is an unpublished implementation draft, not an existing Hex release.
 
-**Validation status:** the Elixir source and ExUnit tests have not been compiled
-or executed in the authoring environment, which has no Elixir/Erlang runtime.
-The 67 committed Python-reference fixtures were generated successfully.
-See `TESTING.md` before treating this draft as a release.
+**Validation status:** 692 tests and 4 doctests passed on Elixir 1.20.5,
+Erlang/OTP 29.1.3, and Nx 1.0.0, with warnings treated as errors.
+The suite checks all four operations against Python einops, including the
+original 67 value fixtures, compiled execution, and numerical gradient
+references. See [TESTING.md](TESTING.md) for the coverage and compatibility limits.
 
 ## Get started
 
@@ -14,21 +15,23 @@ Requires Elixir 1.17 or later within 1.x, and Nx 1.0.x.
 Nx is the only runtime dependency; the tests use the built-in ExUnit framework.
 
 ```sh
-cd einops
-mix deps.get
-mix format
-mix compile --warnings-as-errors
-mix test
-mix run examples/quickstart.exs
+cd einops-nx
+mise exec -- mix deps.get
+mise exec -- mix format --check-formatted
+mise exec -- mix compile --warnings-as-errors
+mise exec -- mix test --warnings-as-errors
+mise exec -- mix run examples/quickstart.exs
 ```
 
 From another Mix project, use a local path dependency:
 
 ```elixir
-{:einops, path: "../einops"}
+{:einops, path: "../einops-nx"}
 ```
 
-No dependency lockfile or native compiler/backend is bundled.
+`mise.toml` selects Elixir 1.20.5 and OTP 29; `mix.lock` records the dependency
+versions used for development. The tests use `Nx.BinaryBackend` and
+`Nx.Defn.Evaluator`, with no native compiler installation required.
 
 ## API
 
@@ -96,6 +99,8 @@ named/ellipsis axis; `repeat` may introduce axes but not remove them; `reduce`
 may remove axes but not invent named ones. Anonymous singleton dimensions may
 be inserted or removed independently. A zero-length ellipsis contributes no
 axes, and an output group containing only that ellipsis has size one.
+An input `...` must still appear in the output of `rearrange` and `repeat`
+when it represents zero dimensions. `reduce` may omit it.
 
 For each input group, at most one factor may be unknown. Every supplied
 length must match the actual shape, every split must divide exactly, and
@@ -146,7 +151,9 @@ end
 
 Pass variable static lengths to an outer `defn` as keyword options, not as
 numeric tensor arguments. `test/defn_test.exs` shows that pattern as well as
-JIT, ahead-of-time compilation, and gradient tests.
+JIT and ahead-of-time compilation. The reference suites also check every
+original transformation pattern under compilation and against independent
+Python finite-difference gradients.
 
 `parse_shape` returns host-side metadata. When using its map inside numerical
 code, consume it in a transform, rather than expecting an ordinary metadata
@@ -167,6 +174,12 @@ Vectorized axes are left to Nx and are not described in the pattern. Ordinary
 axis names are cleared consistently, including for identity transformations.
 No labels are converted into atoms and no tensor contents are extracted into
 Elixir lists by the implementation.
+
+Gradient comparisons cover differentiable floating-point inputs. Separate tests
+check products containing zeros and Nx's equal sharing of min/max gradients at
+ties. `parse_shape` supplies static metadata; its tests differentiate tensor
+expressions whose shapes use that metadata. Boolean reductions have value
+references, without a smooth-gradient parity claim.
 
 ## Implementation
 
@@ -193,11 +206,16 @@ This draft is an einops-inspired subset, not full Python einops compatibility.
 No `einsum`, packing, Axon adapters, callbacks, nested/empty groups, arithmetic
 expressions, tensor-list inputs, or anonymous numeric factors other than `1`.
 Use `ph: 2` instead of writing `(h 2)`. There is no custom reduction callback.
+Labels follow the ASCII grammar above; trailing underscores and general
+whitespace are accepted, while Python's Unicode labels are outside this subset.
+Python's additional `parse_shape` syntax, including groups and singleton
+literals, is rejected with `Einops.Error`. Nx requires positive dimension sizes;
+scalars and ellipses representing zero dimensions are supported and tested.
 
 EXLA and Torchx are not dependencies and have not been validated here. Backend
 support and supported dtypes ultimately depend on the Nx operations used.
-This draft is not publication-ready: runtime verification, a license, and Hex
-package naming/metadata remain release decisions.
+The verified results apply to `Nx.BinaryBackend` and `Nx.Defn.Evaluator`.
+Hex package naming, metadata, and release review remain publication decisions.
 
 ## Acknowledgments
 
