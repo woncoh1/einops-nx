@@ -21,6 +21,25 @@ three locked dependency archives were downloaded from Hex's CDN, their inner
 and outer checksums were checked against `mix.lock`, and Mix reported each
 dependency as `ok`. No dependency source or lockfile changes were needed.
 
+## Continuous integration
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push and
+pull request. Its single job, **Format, compile, and test**, uses Ubuntu 24.04,
+`actions/checkout@v7`, and `erlef/setup-beam@v1` to install the Elixir 1.20.5 / OTP
+29 toolchain. Keep the workflow's version inputs aligned with `mise.toml`.
+
+The job fetches dependencies with `mix deps.get --check-locked`, then checks
+formatting, compiles with warnings treated as errors, and runs ExUnit with
+warnings treated as errors. `MIX_ENV=test` applies to every step so the explicit
+compilation check covers the same environment as the tests. No Python or native
+backend installation is needed.
+
+After a successful run, select **Format, compile, and test** as a required status
+check in the ruleset or branch protection rule for `main`. Keep this job name
+stable so the required check continues to match. The workflow has no branch or
+path filters, so pull requests that change only documentation also receive the
+check. Creating the workflow does not enable a branch protection rule itself.
+
 ## Run locally
 
 From the repository root, fetch dependencies before formatting or testing:
